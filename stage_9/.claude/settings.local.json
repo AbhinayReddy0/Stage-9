@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -p \"STAGE_9_TECHNICAL_CONTEXT.docx\" word/document.xml)",
+      "Bash(perl -ne 'while \\(/<w:t[^>]*>\\([^<]+\\)<\\\\/w:t>/g\\) { print \"$1\\\\n\" }')",
+      "Read(//tmp/**)",
+      "Bash(python *)",
+      "Bash(mv \"M:/stage_9/code/sub_stage_91.py\" \"M:/stage_9/code/model_initialization.py\")",
+      "Bash(mv \"M:/stage_9/code/sub_stage_92.py\" \"M:/stage_9/code/feature_engg.py\")",
+      "Bash(mv \"M:/stage_9/code/sub_stage_93.py\" \"M:/stage_9/code/hp_tuning.py\")",
+      "Bash(STAGE9_TEST_DSN=\"postgresql://postgres:Joyboy@localhost:5432/dev?sslmode=disable\" STAGE9_PROJECT_ROOT=\"M:/stage_9/code\" python -m pytest code/tests/test_stage9_accuracy.py::TestAccuracy::test_trending_sku_damped_at_365d -v -s)",
+      "Bash(STAGE9_TEST_DSN=\"postgresql://postgres:Joyboy@localhost:5432/dev?sslmode=disable\" STAGE9_PROJECT_ROOT=\"M:/stage_9/code\" python -m pytest code/tests/test_stage9_accuracy.py -v -s)",
+      "Bash(STAGE9_TEST_DSN=\"postgresql://postgres:Joyboy@localhost:5432/dev?sslmode=disable\" python -m pytest tests/test_stage9_accuracy.py -v)",
+      "Bash(STAGE9_TEST_DSN=\"postgresql://postgres:Joyboy@localhost:5432/dev?sslmode=disable\" STAGE9_PROJECT_ROOT=\"M:/stage_9/code\" python -m pytest tests/test_rw_audit.py -v -s)",
+      "Bash(STAGE9_TEST_DSN=\"postgresql://postgres:Joyboy@localhost:5432/dev?sslmode=disable\" STAGE9_PROJECT_ROOT=\"M:/stage_9/code\" python -m pytest tests/test_read_audit.py -v -s)",
+      "Bash(Find \"M:\\\\stage_9\\\\code\\\\tests\" -name \"*.py\" -type f)",
+      "Bash(Measure-Object -Line)",
+      "Bash(Select-Object -ExpandProperty Lines)",
+      "Read(//c/Users/layag/Downloads/tests/tests/unit/batch_jobs/**)",
+      "Read(//c/Users/layag/Downloads/tests/tests/unit/handlers/**)",
+      "Read(//c/Users/layag/Downloads/tests/tests/unit/models/**)",
+      "Read(//c/Users/layag/Downloads/tests/tests/unit/orchestration/**)",
+      "Read(//c/Users/layag/Downloads/tests/tests/unit/persistence/**)",
+      "Bash(grep -v \"self, $\")",
+      "Bash(grep -v \"^$\")"
+    ]
+  }
+}

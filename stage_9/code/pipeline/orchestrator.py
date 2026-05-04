@@ -1,0 +1,215 @@
+"""
+orchestrator.py — Stage 9 entry point (Task 27).
+
+Single responsibility: the `run()` conductor that acquires the Redis run
+lock, walks the agent state machine (IDLE → … → COMPLETE / FAILED), and
+delegates each phase to its handler in the `handlers/` package.
+
+State sequence
+--------------
+    IDLE → PRELOADING → PERCEIVING → PLANNING → ACTING
+         → LEARNING   → REPORTING  → COMPLETE
+
+    Any unrecoverable error in PRELOADING / PERCEIVING / PLANNING / ACTING
+    transitions to FAILED. LEARNING and REPORTING have no FAILED edge —
+    if they raise, the lock is still released in the finally-block and the
+    exception propagates to the caller (LangGraph) for retry decisions.
+
+Per-SKU failure isolation (Principle 3)
+---------------------------------------
+    Per-SKU exceptions are handled inside acting_handler's `_per_sku_fallback`.
+    ONE bad SKU never stops the run.
+
+Backward-compat re-exports
+--------------------------
+    `run_one_sku`, `build_sku_pipeline_input`, `REQUIRED_PRELOAD_KEYS`, and
+    `set_test_invariants` now live in `handlers.acting` (Fix 7). They are
+    re-exported here so existing `from orchestrator import ...` call sites
+    continue working without changes.
+"""
+from __future__ import annotations
+
+import logging
+import time
+from typing import Any
+
+from infrastructure.constants import LOCK_KEY_TEMPLATE, LOCK_TTL_SECONDS
+from infrastructure.errors import RunAlreadyInProgressError, TenantParamNotFoundError
+from infrastructure.run_lock import RedisRunLock
+from infrastructure.state_machine import AgentState, transition, _validate_ids
+
+from handlers.preloading import preloading_handler
+from handlers.perceiving import perceiving_handler
+from handlers.planning import planning_handler
+from handlers.acting import acting_handler
+from handlers.learning import learning_handler
+from handlers.reporting import reporting_handler
+
+# Backward-compat re-exports — moved to handlers.acting in Fix 7
+from handlers.acting import (
+    build_sku_pipeline_input,
+    REQUIRED_PRELOAD_KEYS,
+    run_one_sku,
+    set_test_invariants,
+)
+
+log = logging.getLogger(__name__)
+
+__all__ = [
+    "run",
+    "run_outcome_collector",
+    # Per-SKU pipeline (re-exported from handlers.acting)
+    "run_one_sku",
+    "build_sku_pipeline_input",
+    "REQUIRED_PRELOAD_KEYS",
+    "set_test_invariants",
+]
+
+# Marker — Sub-Stage 9.6 is not wired yet. Re-enable when run_substage_96 lands.
+_TODO_96_NOT_BUILT: str = "size_curve_9_6_not_implemented"
+
+
+# ===========================================================================
+# OutcomeCollector stub (Task 23 — not yet built by the team)
+# ===========================================================================
+
+def run_outcome_collector(tenant_id: str, db: Any) -> dict:
+    """3 AM batch job — computes forecast outcomes vs actuals for all horizons."""
+    from learning import outcome_collector
+    return outcome_collector.run_for_tenant(tenant_id, db)
+
+
+# ===========================================================================
+# Top-level run() — the orchestrator entry point
+# ===========================================================================
+
+def run(
+        tenant_id: str,
+        run_id: str,
+        db: Any,
+        redis_client: Any = None,
+) -> None:
+    """Execute one Stage 9 run end-to-end.
+
+    Args:
+        tenant_id:    Tenant identifier. Validated against the provisioning
+                      pattern before any side effect; raises ValueError if
+                      malformed.
+        run_id:       LangGraph-generated run identifier. Same validation.
+        db:           Open psycopg2 connection — caller owns the lifecycle.
+        redis_client: Optional redis client.
+                      • When provided, the lock is acquired/released via
+                        direct `set(..., nx=True, ex=...)` / `delete()` on
+                        this client. Used by tests that mock Redis.
+                      • When None (production), a `RedisRunLock` is built
+                        which uses an atomic Lua release script + token-
+                        based ownership verification.
+
+    Raises:
+        ValueError:                 tenant_id or run_id has invalid format.
+        RunAlreadyInProgressError:  Redis lock is held by another run.
+                                    No DB rows are written.
+        TenantParamNotFoundError:   tenant_learning_params has no rows for
+                                    this tenant. Caught here, a FAILED row
+                                    is written to agent_state_log_s9, then
+                                    re-raised.
+        Any unhandled handler error: re-raised after the FAILED transition
+                                     is written (or attempted).
+    """
+    _validate_ids(tenant_id, run_id)
+
+    lock_key: str | None = None
+    lock_obj: RedisRunLock | None = None
+    token: str | None = None
+
+    if redis_client is not None:
+        lock_key = LOCK_KEY_TEMPLATE.format(tenant_id=tenant_id)
+        acquired = redis_client.set(
+            lock_key, "locked", ex=LOCK_TTL_SECONDS, nx=True,
+        )
+        if not acquired:
+            raise RunAlreadyInProgressError(
+                f"Stage 9 is already running for tenant {tenant_id!r}. "
+                f"Wait for the current run to finish or for the lock to "
+                f"expire (TTL = {LOCK_TTL_SECONDS}s). Lock key: {lock_key!r}."
+            )
+    else:
+        lock_obj = RedisRunLock()
+        acquired, token = lock_obj.acquire(tenant_id)
+        if not acquired:
+            raise RunAlreadyInProgressError(
+                f"Stage 9 already running for tenant {tenant_id!r} — "
+                f"wait for the active run to release the Redis lock."
+            )
+
+    started_at = time.time()
+    state = AgentState.IDLE
+
+    try:
+        state = transition(db, tenant_id, run_id, state, AgentState.PRELOADING)
+        preloading_handler(tenant_id=tenant_id, run_id=run_id, db=db)
+
+        state = transition(db, tenant_id, run_id, state, AgentState.PERCEIVING)
+        perceiving_handler(tenant_id=tenant_id, run_id=run_id, db=db)
+
+        state = transition(db, tenant_id, run_id, state, AgentState.PLANNING)
+        planning_handler(tenant_id=tenant_id, run_id=run_id, db=db)
+
+        state = transition(db, tenant_id, run_id, state, AgentState.ACTING)
+        acting_handler(tenant_id=tenant_id, run_id=run_id, db=db)
+
+        # No FAILED edge from LEARNING / REPORTING onward
+        state = transition(db, tenant_id, run_id, state, AgentState.LEARNING)
+        learning_handler(tenant_id=tenant_id, run_id=run_id, db=db)
+
+        state = transition(db, tenant_id, run_id, state, AgentState.REPORTING)
+        reporting_handler(tenant_id=tenant_id, run_id=run_id, db=db)
+
+        state = transition(db, tenant_id, run_id, state, AgentState.COMPLETE)
+
+        log.info(
+            "orchestrator run_complete tenant=%s run=%s elapsed=%.1fs",
+            tenant_id, run_id, time.time() - started_at,
+        )
+
+    except Exception as exc:
+        if isinstance(exc, TenantParamNotFoundError):
+            log.error(
+                "stage9_tenant_params_missing tenant_id=%s run_id=%s: "
+                "no rows in tenant_learning_params for this tenant. "
+                "Provision the tenant or check the onboarding pipeline.",
+                tenant_id, run_id,
+            )
+
+        log.exception(
+            "orchestrator run_failed tenant=%s run=%s state=%s",
+            tenant_id, run_id, state.value,
+        )
+        try:
+            transition(
+                db, tenant_id, run_id, state, AgentState.FAILED,
+                reason=str(exc)[:2000],
+            )
+        except Exception:
+            log.critical(
+                "orchestrator FAILED-transition unwrite tenant=%s run=%s "
+                "state=%s — audit log incomplete",
+                tenant_id, run_id, state.value,
+            )
+        raise
+
+    finally:
+        if redis_client is not None and lock_key is not None:
+            try:
+                redis_client.delete(lock_key)
+            except Exception:
+                log.exception(
+                    "orchestrator redis_client.delete failed tenant=%s", tenant_id,
+                )
+        elif lock_obj is not None:
+            try:
+                lock_obj.release(tenant_id, token)
+            except Exception:
+                log.exception(
+                    "orchestrator RedisRunLock release failed tenant=%s", tenant_id,
+                )
