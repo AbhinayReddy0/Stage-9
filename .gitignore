@@ -9,3 +9,5 @@ build/
 .venv/
 myvnv/
 node_modules/
+.claude
+.idea
