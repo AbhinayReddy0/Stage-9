@@ -46,12 +46,10 @@ HOW TO RUN
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 import uuid
-from datetime import date, timedelta, datetime
-from decimal import Decimal
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -85,12 +83,12 @@ from learning.outcome_collector import run_for_tenant as run_outcome_collector
 from learning.model_performance_aggregator import run_model_performance_aggregator
 from learning.learning_params_updater import LearningParamsUpdater
 
-
 # ===========================================================================
 # Shared helpers
 # ===========================================================================
 
 _NS = uuid.uuid5(uuid.NAMESPACE_DNS, "stage9-missing-tests")
+
 
 def _uid(code: str) -> str:
     return str(uuid.uuid5(_NS, code))
@@ -284,8 +282,8 @@ class TestBatchPipeline:
         """
         conn = _connect()
         tenant_id = str(uuid.uuid4())
-        run_id    = str(uuid.uuid4())
-        sku_uuid  = _uid("BATCH-STB-001")
+        run_id = str(uuid.uuid4())
+        sku_uuid = _uid("BATCH-STB-001")
         print(f"\n[batch] tenant={tenant_id}")
 
         try:
@@ -502,7 +500,7 @@ class TestEdgeCases:
 
     def _run_single_sku(self, conn, tenant_id, sku_code, orders_df,
                         pattern, model_hint, obs_days):
-        run_id   = str(uuid.uuid4())
+        run_id = str(uuid.uuid4())
         sku_uuid = _uid(sku_code)
         _seed_base(conn, tenant_id, run_id, n_skus=1)
         _seed_sku(conn, tenant_id, run_id, sku_uuid,
@@ -530,7 +528,7 @@ class TestEdgeCases:
         start = date.today() - timedelta(days=90)
         df = pd.DataFrame({
             "order_date": [start + timedelta(days=i) for i in range(90)],
-            "quantity":   [0] * 90,
+            "quantity": [0] * 90,
         })
         run_id, sku_uuid = self._run_single_sku(
             conn, tenant_id, "EDGE-ZERO-001", df,
@@ -566,7 +564,7 @@ class TestEdgeCases:
         qty[90] = 5
         df = pd.DataFrame({
             "order_date": [start + timedelta(days=i) for i in range(180)],
-            "quantity":   qty,
+            "quantity": qty,
         })
         run_id, sku_uuid = self._run_single_sku(
             conn, tenant_id, "EDGE-ONE-001", df,
@@ -591,7 +589,7 @@ class TestEdgeCases:
             qty[idx] = -5
         df = pd.DataFrame({
             "order_date": [start + timedelta(days=i) for i in range(90)],
-            "quantity":   qty,
+            "quantity": qty,
         })
         run_id, sku_uuid = self._run_single_sku(
             conn, tenant_id, "EDGE-NEG-001", df,
@@ -630,7 +628,7 @@ class TestEdgeCases:
         start = date.today() - timedelta(days=90)
         dates = [start + timedelta(days=i) for i in range(90)]
         # Add 5 future dates
-        dates += [date.today() + timedelta(days=i+1) for i in range(5)]
+        dates += [date.today() + timedelta(days=i + 1) for i in range(5)]
         qty = [20] * 90 + [999] * 5  # future rows have unrealistic qty
         df = pd.DataFrame({"order_date": dates, "quantity": qty})
         run_id, sku_uuid = self._run_single_sku(
@@ -672,7 +670,7 @@ class TestEdgeCases:
             sku_uuid = _uid(f"EDGE-ALLFAIL-{i:03d}")
             df = pd.DataFrame({
                 "order_date": [start + timedelta(days=j) for j in range(25)],
-                "quantity":   [0] * 25,
+                "quantity": [0] * 25,
             })
             _seed_sku(conn, tenant_id, run_id, sku_uuid,
                       df, "cold_start", "Naive", 25)
@@ -705,12 +703,12 @@ class TestBoundaries:
 
     def _quick_run(self, conn, tenant_id, sku_code, n_days, mean,
                    pattern, model):
-        run_id   = str(uuid.uuid4())
+        run_id = str(uuid.uuid4())
         sku_uuid = _uid(sku_code)
-        start    = date.today() - timedelta(days=n_days)
+        start = date.today() - timedelta(days=n_days)
         df = pd.DataFrame({
             "order_date": [start + timedelta(days=i) for i in range(n_days)],
-            "quantity":   [round(mean)] * n_days,
+            "quantity": [round(mean)] * n_days,
         })
         _seed_base(conn, tenant_id, run_id, n_skus=1)
         _seed_sku(conn, tenant_id, run_id, sku_uuid, df, pattern, model, n_days)
@@ -828,7 +826,7 @@ class TestTenantIsolation:
 
             for conn, tid, rid, sku_uuid, mean in [
                 (conn_a, t_a, run_a, sku_a, 20.0),
-                (conn_b, t_b, run_b, sku_b, 50.0),   # different mean — easy to detect leak
+                (conn_b, t_b, run_b, sku_b, 50.0),  # different mean — easy to detect leak
             ]:
                 _seed_base(conn, tid, rid, n_skus=1)
                 _seed_sku(conn, tid, rid, sku_uuid,
@@ -859,8 +857,8 @@ class TestTenantIsolation:
         return 0 rows. That's the contract."""
         e = two_tenants
         bogus = str(uuid.uuid4())
-        n_a     = self._count(e["conn_a"], "stage9.forecasts", e["tenant_a"])
-        n_b     = self._count(e["conn_b"], "stage9.forecasts", e["tenant_b"])
+        n_a = self._count(e["conn_a"], "stage9.forecasts", e["tenant_a"])
+        n_b = self._count(e["conn_b"], "stage9.forecasts", e["tenant_b"])
         n_bogus = self._count(e["conn_a"], "stage9.forecasts", bogus)
         assert n_a == 1, f"Tenant A has {n_a} forecast rows, expected 1"
         assert n_b == 1, f"Tenant B has {n_b} forecast rows, expected 1"
@@ -873,8 +871,8 @@ class TestTenantIsolation:
         """Same partition contract for thompson_sampling_state."""
         e = two_tenants
         bogus = str(uuid.uuid4())
-        n_a     = self._count(e["conn_a"], "stage9.thompson_sampling_state", e["tenant_a"])
-        n_b     = self._count(e["conn_b"], "stage9.thompson_sampling_state", e["tenant_b"])
+        n_a = self._count(e["conn_a"], "stage9.thompson_sampling_state", e["tenant_a"])
+        n_b = self._count(e["conn_b"], "stage9.thompson_sampling_state", e["tenant_b"])
         n_bogus = self._count(e["conn_a"], "stage9.thompson_sampling_state", bogus)
         assert n_a >= 1, f"Tenant A has {n_a} Thompson rows, expected ≥ 1"
         assert n_b >= 1, f"Tenant B has {n_b} Thompson rows, expected ≥ 1"
@@ -889,6 +887,7 @@ class TestTenantIsolation:
         If the forecasts are the same, data from one tenant leaked into the other.
         """
         e = two_tenants
+
         def _get_mean(conn, tenant_id, run_id):
             cur = conn.cursor()
             cur.execute(
@@ -929,6 +928,7 @@ class TestTenantIsolation:
         n_b = self._count(e["conn_b"], "stage9.tenant_learning_params", e["tenant_b"])
         assert n_a >= 1, f"Tenant A has {n_a} learning param rows"
         assert n_b >= 1, f"Tenant B has {n_b} learning param rows"
+
         # Read the same param for both — must be independently set
         def _get_param(conn, tenant_id, param):
             cur = conn.cursor()
@@ -940,6 +940,7 @@ class TestTenantIsolation:
             row = cur.fetchone()
             cur.close()
             return row[0] if row else None
+
         # Both tenants start from the same seed defaults — both should exist
         v_a = _get_param(e["conn_a"], e["tenant_a"], "min_backtest_window")
         v_b = _get_param(e["conn_b"], e["tenant_b"], "min_backtest_window")

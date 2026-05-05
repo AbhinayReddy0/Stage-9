@@ -26,7 +26,7 @@ Usage:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Optional
 
@@ -263,24 +263,28 @@ def _scenarios() -> list[Scenario]:
     s.append(Scenario(
         name="trending_60d_up",         sku_code="SYN-TRN-60D-UP",
         pattern_label="trending",       expected_model="Holt",   expected_quantile=0.80,
-        obs_days=60,                    df_factory=lambda: gen_trending("SYN-TRN-60D-UP", n_days=60, daily_mean=8.0, trend_slope=0.10),
+        obs_days=60,
+        df_factory=lambda: gen_trending("SYN-TRN-60D-UP", n_days=60, daily_mean=8.0, trend_slope=0.10),
     ))
     s.append(Scenario(
         name="trending_120d_up",        sku_code="SYN-TRN-120D",
         pattern_label="trending",       expected_model="Holt",   expected_quantile=0.80,
-        obs_days=120,                   df_factory=lambda: gen_trending("SYN-TRN-120D", n_days=120, daily_mean=8.0, trend_slope=0.08),
+        obs_days=120,
+        df_factory=lambda: gen_trending("SYN-TRN-120D", n_days=120, daily_mean=8.0, trend_slope=0.08),
     ))
     s.append(Scenario(
         name="trending_180d_down",      sku_code="SYN-TRN-180D-DN",
         pattern_label="trending",       expected_model="Holt",   expected_quantile=0.80,
-        obs_days=180,                   df_factory=lambda: gen_trending("SYN-TRN-180D-DN", n_days=180, daily_mean=25.0, trend_slope=-0.05),
+        obs_days=180,
+        df_factory=lambda: gen_trending("SYN-TRN-180D-DN", n_days=180, daily_mean=25.0, trend_slope=-0.05),
         notes="Negative slope — model still Holt; quantile still 0.80",
     ))
 
     s.append(Scenario(
         name="seasonal_180d_weekly",    sku_code="SYN-SEA-180D",
         pattern_label="seasonal",       expected_model="Prophet", expected_quantile=0.90,
-        obs_days=180,                   df_factory=lambda: gen_seasonal("SYN-SEA-180D", n_days=180, weekly_amp=0.40, annual_amp=0.0),
+        obs_days=180,
+        df_factory=lambda: gen_seasonal("SYN-SEA-180D", n_days=180, weekly_amp=0.40, annual_amp=0.0),
         notes="Weekly cycle only — half a year",
     ))
     s.append(Scenario(
@@ -304,7 +308,8 @@ def _scenarios() -> list[Scenario]:
     s.append(Scenario(
         name="intermittent_365d_extreme", sku_code="SYN-INT-365D",
         pattern_label="intermittent",   expected_model="Croston", expected_quantile=0.90,
-        obs_days=365,                   df_factory=lambda: gen_intermittent("SYN-INT-365D", n_days=365, zero_ratio=0.80, daily_mean=4.0),
+        obs_days=365,
+        df_factory=lambda: gen_intermittent("SYN-INT-365D", n_days=365, zero_ratio=0.80, daily_mean=4.0),
         notes="80% zero days — Croston should still produce a reasonable rate",
     ))
 

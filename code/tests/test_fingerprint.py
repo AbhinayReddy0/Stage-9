@@ -12,8 +12,6 @@ from __future__ import annotations
 import hashlib
 import json
 
-import pytest
-
 from forecasting.fingerprint import (
     compute_fingerprint,
     classify_tier,

@@ -33,7 +33,6 @@ import os
 import re
 import sys
 import unittest
-from decimal import Decimal
 from typing import Any
 from unittest.mock import MagicMock
 
@@ -44,7 +43,6 @@ from infrastructure.constants import RunStatus
 from infrastructure.errors import RunAlreadyInProgressError
 from handlers._context import _REGISTRY
 from pipeline.orchestrator import run
-
 
 # ===========================================================================
 # Schema registry — INSERT column validation (schema drift guard)
@@ -121,7 +119,7 @@ def _validate_insert(sql: str) -> None:
     table = match.group(1).strip().lower()
     cols = {c.strip().lower() for c in match.group(2).split(",")}
     if table not in _TABLE_SCHEMAS:
-        return   # table not yet declared in schema registry — skip silently
+        return  # table not yet declared in schema registry — skip silently
     unknown = cols - _TABLE_SCHEMAS[table]
     assert not unknown, (
         f"INSERT into {table!r} references unknown column(s): {sorted(unknown)}.\n"
@@ -260,16 +258,16 @@ def _run(tenant_id: str, run_id: str, db: InMemoryDB, redis=None) -> None:
 
 class TestTransitionSequence(unittest.TestCase):
     TENANT = "acme-01"
-    RUN    = "run-seq-001"
+    RUN = "run-seq-001"
 
     EXPECTED = [
-        ("IDLE",       "PRELOADING"),
+        ("IDLE", "PRELOADING"),
         ("PRELOADING", "PERCEIVING"),
         ("PERCEIVING", "PLANNING"),
-        ("PLANNING",   "ACTING"),
-        ("ACTING",     "LEARNING"),
-        ("LEARNING",   "REPORTING"),
-        ("REPORTING",  "COMPLETE"),
+        ("PLANNING", "ACTING"),
+        ("ACTING", "LEARNING"),
+        ("LEARNING", "REPORTING"),
+        ("REPORTING", "COMPLETE"),
     ]
 
     def test_seven_rows_written_in_order(self):
@@ -281,12 +279,12 @@ class TestTransitionSequence(unittest.TestCase):
             if isinstance(p, dict) and "from_state" in p
         ]
         self.assertEqual(len(rows), 7,
-            f"Expected 7 state-log rows; got {len(rows)}.\n"
-            f"Pairs: {[(r['from_state'], r['to_state']) for r in rows]}")
+                         f"Expected 7 state-log rows; got {len(rows)}.\n"
+                         f"Pairs: {[(r['from_state'], r['to_state']) for r in rows]}")
 
         for i, (exp_from, exp_to) in enumerate(self.EXPECTED):
             self.assertEqual(rows[i]["from_state"], exp_from)
-            self.assertEqual(rows[i]["to_state"],   exp_to)
+            self.assertEqual(rows[i]["to_state"], exp_to)
 
     def test_commit_at_least_once_per_transition(self):
         db = InMemoryDB(self.TENANT)
@@ -302,12 +300,12 @@ class TestTenantParams(unittest.TestCase):
     """Verify the run uses real TenantParams seeded from production defaults."""
 
     TENANT = "acme-params"
-    RUN    = "run-params-001"
+    RUN = "run-params-001"
 
     def test_run_succeeds_with_full_param_set(self):
         """All 58 production defaults are present — no UnknownParamError."""
         db = InMemoryDB(self.TENANT)
-        _run(self.TENANT, self.RUN, db)   # would raise if any param missing
+        _run(self.TENANT, self.RUN, db)  # would raise if any param missing
 
     def test_run_fails_when_params_missing(self):
         """perceiving_handler raises TenantParamNotFoundError on empty params table."""
@@ -329,7 +327,7 @@ class TestSchemaContract(unittest.TestCase):
     """INSERT statements reference only declared columns."""
 
     TENANT = "acme-schema"
-    RUN    = "run-schema-001"
+    RUN = "run-schema-001"
 
     def setUp(self):
         self.db = InMemoryDB(self.TENANT)
@@ -348,7 +346,7 @@ class TestSchemaContract(unittest.TestCase):
         """Re-validate every INSERT in the log — fails if schema dict is wrong."""
         for sql, _ in self.db.sql_log:
             if "INSERT INTO" in sql.upper():
-                _validate_insert(sql)   # raises AssertionError on unknown columns
+                _validate_insert(sql)  # raises AssertionError on unknown columns
 
 
 # ===========================================================================
@@ -410,13 +408,13 @@ class TestLockLifecycle(unittest.TestCase):
 
 class TestRunContextLifecycle(unittest.TestCase):
     TENANT = "acme-ctx"
-    RUN    = "run-ctx-001"
+    RUN = "run-ctx-001"
 
     def test_context_removed_after_complete_run(self):
         db = InMemoryDB(self.TENANT)
         _run(self.TENANT, self.RUN, db)
         self.assertNotIn(self.RUN, _REGISTRY,
-            "RunContext must be removed from the registry after COMPLETE")
+                         "RunContext must be removed from the registry after COMPLETE")
 
     def test_params_set_before_acting(self):
         """Real perceiving_handler must populate ctx.params before planning runs."""
@@ -442,7 +440,7 @@ class TestRunContextLifecycle(unittest.TestCase):
         self.assertIsNotNone(seen[0], "ctx.params must be set before planning_handler runs")
         # Verify it's a real TenantParams (not a stub) by checking it has 58 params.
         self.assertEqual(len(seen[0]), 58,
-            f"Expected 58 params from production defaults, got {len(seen[0])}")
+                         f"Expected 58 params from production defaults, got {len(seen[0])}")
 
 
 # ===========================================================================
@@ -475,26 +473,26 @@ class TestRunOneSku(unittest.TestCase):
         # Minimal preloaded_data contract — every REQUIRED_PRELOAD_KEY present.
         from handlers.acting import REQUIRED_PRELOAD_KEYS
         preloaded_data = {
-            "demand_series":         [float(i % 20 + 1) for i in range(120)],
-            "promo_weights":         {},
-            "pattern_label":         "stable",
-            "lifecycle_stage":       "mature",
-            "assigned_model":        "SES",
-            "selected_quantile":     0.80,
+            "demand_series": [float(i % 20 + 1) for i in range(120)],
+            "promo_weights": {},
+            "pattern_label": "stable",
+            "lifecycle_stage": "mature",
+            "assigned_model": "SES",
+            "selected_quantile": 0.80,
             "effective_max_horizon": 365,
-            "learning_mode":         "standard",
+            "learning_mode": "standard",
             "oos_adjustment_factor": 1.0,
-            "reorder_bias_factor":   1.0,
-            "on_watchlist":          False,
-            "pattern_confidence":    0.75,
-            "thompson_state":        {},
+            "reorder_bias_factor": 1.0,
+            "on_watchlist": False,
+            "pattern_confidence": 0.75,
+            "thompson_state": {},
             "calibrated_window_days": 60,
-            "calibration_gap":       None,
-            "tier":                  "full",
-            "weekend_zero_ratio":    0.0,
-            "criticality_tier":      None,
-            "parent_style_id":       None,
-            "tenant_params":         params.to_dict(),
+            "calibration_gap": None,
+            "tier": "full",
+            "weekend_zero_ratio": 0.0,
+            "criticality_tier": None,
+            "parent_style_id": None,
+            "tenant_params": params.to_dict(),
         }
         # Fill any remaining required keys with safe defaults.
         for key in REQUIRED_PRELOAD_KEYS - preloaded_data.keys():
@@ -544,13 +542,13 @@ class TestRunOneSku(unittest.TestCase):
 
         batch_rows = result.get("batch_rows") or {}
         self.assertIn("forecasts", batch_rows,
-            "run_one_sku must return a 'forecasts' entry in batch_rows")
+                      "run_one_sku must return a 'forecasts' entry in batch_rows")
         rows = batch_rows["forecasts"]
         self.assertEqual(len(rows), 1)
         row = rows[0]
         for horizon in (7, 14, 30, 60, 90, 150, 180, 365):
             self.assertIn(f"forecast_{horizon}d", row,
-                f"forecast_{horizon}d missing from forecasts row")
+                          f"forecast_{horizon}d missing from forecasts row")
 
 
 if __name__ == "__main__":

@@ -50,7 +50,6 @@ import pandas as pd
 
 from forecasting.confidence import ForecastContext, EXCEPTION_PENALTY_FLAGS, compute_confidence  # noqa: F401
 from infrastructure.constants import (
-    CONFIDENCE_BASE_PARAM,
     REASONABLE_HORIZON_DAYS,
     REASONABLENESS_ROLLING_BASELINE_DAYS,
     HORIZONS,

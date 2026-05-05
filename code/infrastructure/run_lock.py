@@ -67,7 +67,6 @@ DEPENDENCIES
 """
 
 import logging
-import os
 import threading
 import uuid
 from typing import Optional
@@ -92,7 +91,10 @@ log = logging.getLogger(__name__)
 # this process can hold. Defaults to 10 (enough for local dev and the first
 # production tier). Override via REDIS_POOL_SIZE env var for environments
 # running more than 10 concurrent tenant Stage 9 processes.
-from infrastructure.config import REDIS_POOL_SIZE as _REDIS_POOL_SIZE, ALLOW_FORCE_RELEASE as _ALLOW_FORCE_RELEASE  # noqa: E402
+from infrastructure.config import (  # noqa: E402
+    REDIS_POOL_SIZE as _REDIS_POOL_SIZE,
+    ALLOW_FORCE_RELEASE as _ALLOW_FORCE_RELEASE,
+)
 MAX_POOL_CONNECTIONS: int = _REDIS_POOL_SIZE
 
 # ---------------------------------------------------------------------------

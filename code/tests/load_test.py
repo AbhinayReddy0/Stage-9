@@ -45,22 +45,23 @@ from models.ses import SESModel
 from models.holt import HoltLinearTrend
 from models.croston import CrostonMethod
 from forecasting.feature_engg import run_feature_engineering
-from models.hp_tuning import run_hp_tuning
 from infrastructure.tenant_params import TenantParams
 from infrastructure.tenant_params_defaults import TENANT_LEARNING_PARAMS_DEFAULTS
 from handlers.acting import run_one_sku, set_test_invariants, REQUIRED_PRELOAD_KEYS
 from pipeline.dual_pool import SkuPipelineInput
-
 
 # ── Model / pattern slots ─────────────────────────────────────────────────────
 # Each slot: (ModelClass, model_name, pattern, n_history_days, default_hp).
 # n_history_days ≥ 60 so sub_stage_93 holdout (14 days) always fires.
 
 _SLOTS = [
-    (NaiveForecast,  "naive_forecast",               Pattern.COLD_START,   60,  {"lag_periods": 7, "smoothing_method": "mean_7d"}),
-    (SESModel,       "simple_exponential_smoothing",  Pattern.STABLE,       90,  {"smoothing_level": 0.3}),
-    (HoltLinearTrend,"holts_linear_trend",            Pattern.TRENDING,     90,  {"smoothing_level": 0.3, "smoothing_trend": 0.1, "damped_trend": True}),
-    (CrostonMethod,  "croston",                       Pattern.INTERMITTENT, 60,  {"alpha": 0.10, "interval_type": "SBA"}),
+    (NaiveForecast, "naive_forecast", Pattern.COLD_START,
+     60, {"lag_periods": 7, "smoothing_method": "mean_7d"}),
+    (SESModel, "simple_exponential_smoothing", Pattern.STABLE, 90, {"smoothing_level": 0.3}),
+    (HoltLinearTrend, "holts_linear_trend", Pattern.TRENDING, 90,
+     {"smoothing_level": 0.3, "smoothing_trend": 0.1, "damped_trend": True}),
+    (CrostonMethod, "croston", Pattern.INTERMITTENT,
+     60, {"alpha": 0.10, "interval_type": "SBA"}),
 ]
 
 _N_SLOTS = len(_SLOTS)
@@ -68,7 +69,7 @@ _N_SLOTS = len(_SLOTS)
 # ── Shared real TenantParams (52 production defaults) ────────────────────────
 
 _TENANT_ID = "load-test-tenant"
-_RUN_ID    = "load-test-run"
+_RUN_ID = "load-test-run"
 
 _PARAMS: TenantParams = TenantParams.from_dict(
     _TENANT_ID,
@@ -91,6 +92,7 @@ _PRELOADED_93 = {"thompson_state": {}}
 
 class _NullBatchWriter:
     """Discards queue() calls — zero allocation overhead (Phase 1 & 2 only)."""
+
     def queue(self, table: str, row: dict) -> None:
         pass
 
@@ -102,7 +104,7 @@ _SHARED_BW = _NullBatchWriter()
 
 class _InMemoryCursor:
     def __init__(self, db: "_InMemoryDB") -> None:
-        self._db  = db
+        self._db = db
         self._rows: list = []
         self.description = None
         self.rowcount: int = -1
@@ -128,8 +130,11 @@ class _InMemoryCursor:
     def close(self) -> None:
         pass
 
-    def __enter__(self): return self
-    def __exit__(self, *_): self.close()
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        self.close()
 
 
 class _InMemoryDB:
@@ -167,7 +172,7 @@ class _InMemoryDB:
 
 def _make_df(pattern: str, n_days: int, seed: int) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
-    t   = np.arange(n_days, dtype=float)
+    t = np.arange(n_days, dtype=float)
 
     if pattern == Pattern.STABLE:
         qty = rng.uniform(5, 15, n_days)
@@ -185,7 +190,7 @@ def _make_df(pattern: str, n_days: int, seed: int) -> pd.DataFrame:
 
     return pd.DataFrame({
         "date": pd.date_range("2023-01-01", periods=n_days),
-        "qty":  np.maximum(qty, 0.0),
+        "qty": np.maximum(qty, 0.0),
     })
 
 
@@ -200,18 +205,18 @@ class _Ctx:
     )
 
     def __init__(self, sku_id: str, model_name: str, pattern: str) -> None:
-        self.sku_id            = sku_id
-        self.tenant_id         = _TENANT_ID
-        self.run_id            = _RUN_ID
-        self.assigned_model    = model_name
-        self.pattern_label     = pattern
-        self.is_b2b            = False
+        self.sku_id = sku_id
+        self.tenant_id = _TENANT_ID
+        self.run_id = _RUN_ID
+        self.assigned_model = model_name
+        self.pattern_label = pattern
+        self.is_b2b = False
         self.selected_features = ["date", "qty"]
-        self.sample_weights    = None
-        self.baseline_mape     = 0.5
-        self.lifecycle_stage   = None
-        self.best_hp           = {}
-        self.validation_mape   = 1.0
+        self.sample_weights = None
+        self.baseline_mape = 0.5
+        self.lifecycle_stage = None
+        self.best_hp = {}
+        self.validation_mape = 1.0
 
 
 # ── Phase work functions ──────────────────────────────────────────────────────
@@ -221,8 +226,8 @@ def _work_raw(i: int) -> tuple[float, str | None]:
     model_cls, _, pattern, n_days, hp = _SLOTS[i % _N_SLOTS]
     t0 = time.perf_counter()
     try:
-        df  = _make_df(pattern, n_days, seed=i)
-        m   = model_cls(hp=hp)
+        df = _make_df(pattern, n_days, seed=i)
+        m = model_cls(hp=hp)
         m.fit(df, ["date", "qty"])
         out = m.predict_all_horizons(df, ["date", "qty"])
         assert len(out) == 8, f"expected 8 horizon keys, got {len(out)}"
@@ -236,10 +241,10 @@ def _work_92(i: int) -> tuple[float, str | None]:
     model_cls, model_name, pattern, n_days, hp = _SLOTS[i % _N_SLOTS]
     t0 = time.perf_counter()
     try:
-        df    = _make_df(pattern, n_days, seed=i)
-        ctx   = _Ctx(f"sku-{i:08d}", model_name, pattern)
+        df = _make_df(pattern, n_days, seed=i)
+        ctx = _Ctx(f"sku-{i:08d}", model_name, pattern)
         model = model_cls(hp=hp)
-        res   = run_feature_engineering(ctx, df, model, _PRELOADED_92, _PARAMS, _SHARED_BW)
+        res = run_feature_engineering(ctx, df, model, _PRELOADED_92, _PARAMS, _SHARED_BW)
         assert res.df_train is not None, "df_train must not be None after sub_stage_92"
         assert len(res.selected_features) >= 2, "selected_features must have at least date+qty"
         return time.perf_counter() - t0, None
@@ -254,7 +259,7 @@ def _make_sku_input(i: int) -> SkuPipelineInput:
     real TenantParams snapshot + all REQUIRED_PRELOAD_KEYS populated.
     """
     _, model_name, pattern, n_days, _ = _SLOTS[i % _N_SLOTS]
-    n_days = max(n_days, 120)   # enough history for HP tuning holdout
+    n_days = max(n_days, 120)  # enough history for HP tuning holdout
 
     demand_series = list(_make_df(pattern, n_days, seed=i)["qty"].astype(float))
 
@@ -263,29 +268,29 @@ def _make_sku_input(i: int) -> SkuPipelineInput:
     } else "quantile_stable"
 
     preloaded_data: dict = {
-        "demand_series":          demand_series,
-        "promo_weights":          {},
-        "pattern_label":          pattern,
-        "lifecycle_stage":        "mature",
-        "assigned_model":         model_name,
-        "selected_quantile":      float(_PARAMS.get(quantile_param)),
-        "effective_max_horizon":  365,
-        "learning_mode":          "standard",
-        "oos_adjustment_factor":  1.0,
-        "reorder_bias_factor":    1.0,
-        "on_watchlist":           False,
-        "pattern_confidence":     0.75,
-        "thompson_state":         {},
+        "demand_series": demand_series,
+        "promo_weights": {},
+        "pattern_label": pattern,
+        "lifecycle_stage": "mature",
+        "assigned_model": model_name,
+        "selected_quantile": float(_PARAMS.get(quantile_param)),
+        "effective_max_horizon": 365,
+        "learning_mode": "standard",
+        "oos_adjustment_factor": 1.0,
+        "reorder_bias_factor": 1.0,
+        "on_watchlist": False,
+        "pattern_confidence": 0.75,
+        "thompson_state": {},
         "calibrated_window_days": 60,
-        "calibration_gap":        None,
-        "tier":                   "full",
-        "weekend_zero_ratio":     0.0,
-        "criticality_tier":       None,
-        "parent_style_id":        None,
-        "tenant_params":          _PARAMS.to_dict(),
-        "feature_history":        {},
-        "feature_reliability":    {},
-        "promo_decisions":        {},
+        "calibration_gap": None,
+        "tier": "full",
+        "weekend_zero_ratio": 0.0,
+        "criticality_tier": None,
+        "parent_style_id": None,
+        "tenant_params": _PARAMS.to_dict(),
+        "feature_history": {},
+        "feature_reliability": {},
+        "promo_decisions": {},
     }
     # Populate any remaining required keys not yet set.
     for key in REQUIRED_PRELOAD_KEYS - preloaded_data.keys():
@@ -307,13 +312,13 @@ def _work_full(i: int) -> tuple[float, str | None]:
     """
     t0 = time.perf_counter()
     try:
-        db        = _InMemoryDB()
+        db = _InMemoryDB()
         sku_input = _make_sku_input(i)
-        result    = run_one_sku(sku_input, _TENANT_ID, _RUN_ID, db)
+        result = run_one_sku(sku_input, _TENANT_ID, _RUN_ID, db)
 
-        assert "status"           in result, "result missing 'status'"
+        assert "status" in result, "result missing 'status'"
         assert "confidence_final" in result, "result missing 'confidence_final'"
-        assert "backtest_mape"    in result, "result missing 'backtest_mape'"
+        assert "backtest_mape" in result, "result missing 'backtest_mape'"
         assert 0.0 <= result["confidence_final"] <= 1.0, (
             f"confidence_final {result['confidence_final']!r} out of [0, 1]"
         )
@@ -341,17 +346,17 @@ def _print_separator(width: int = 72) -> None:
 
 
 def _report_phase(
-    phase: str,
-    timings: list[float],
-    errors: dict[str, int],
-    wall_seconds: float,
-    n_skus: int,
-    n_workers: int,
+        phase: str,
+        timings: list[float],
+        errors: dict[str, int],
+        wall_seconds: float,
+        n_skus: int,
+        n_workers: int,
 ) -> None:
-    n_err   = sum(errors.values())
-    n_ok    = n_skus - n_err
+    n_err = sum(errors.values())
+    n_ok = n_skus - n_err
     err_pct = 100 * n_err / n_skus if n_skus else 0
-    tps     = n_skus / wall_seconds if wall_seconds > 0 else 0
+    tps = n_skus / wall_seconds if wall_seconds > 0 else 0
 
     _print_separator()
     print(f"  Phase : {phase}")
@@ -377,14 +382,14 @@ def _report_phase(
 
 def _run_phase(label: str, work_fn, n_skus: int, n_workers: int) -> None:
     timings: list[float] = []
-    errors:  dict[str, int] = {}
+    errors: dict[str, int] = {}
 
     print(f"\nStarting phase '{label}'  ({n_skus:,} SKUs, {n_workers} workers) ...")
     t_start = time.perf_counter()
 
     with ThreadPoolExecutor(max_workers=n_workers) as pool:
-        futs        = {pool.submit(work_fn, i): i for i in range(n_skus)}
-        done        = 0
+        futs = {pool.submit(work_fn, i): i for i in range(n_skus)}
+        done = 0
         report_every = max(1, n_skus // 10)
 
         for fut in as_completed(futs):
@@ -427,9 +432,9 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    n_skus    = args.skus
+    n_skus = args.skus
     n_workers = args.workers
-    phase     = args.phase
+    phase = args.phase
 
     print()
     print("=" * 72)
@@ -446,10 +451,10 @@ def main() -> None:
     print(" done.")
 
     if phase in ("all", "raw"):
-        _run_phase("raw_model — fit + predict_all_horizons",        _work_raw,  n_skus, n_workers)
+        _run_phase("raw_model — fit + predict_all_horizons", _work_raw, n_skus, n_workers)
 
     if phase in ("all", "92"):
-        _run_phase("sub_stage_92 — feature engineering",             _work_92,   n_skus, n_workers)
+        _run_phase("sub_stage_92 — feature engineering", _work_92, n_skus, n_workers)
 
     if phase in ("all", "full"):
         _run_phase("full_pipeline — run_one_sku (9.2→9.3→9.4→9.5)", _work_full, n_skus, n_workers)

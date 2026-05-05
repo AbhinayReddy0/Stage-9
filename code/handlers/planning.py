@@ -27,10 +27,8 @@ acting_handler picks them up without additional DB reads.
 from __future__ import annotations
 
 import logging
-import os
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any
 
 import pandas as pd
 

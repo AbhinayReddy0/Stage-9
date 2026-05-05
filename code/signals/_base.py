@@ -94,6 +94,7 @@ _DELETE_PRIOR_MODEL_HEALTH_SQL = (
 # Public dataclasses + exceptions
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class Signal:
     """A row read back from cross_agent_signals — payload + metadata."""
@@ -132,6 +133,7 @@ class SignalEmitFailed(Exception):
 # ---------------------------------------------------------------------------
 # Low-level helpers
 # ---------------------------------------------------------------------------
+
 
 def _clamp_confidence(value: Optional[float]) -> Optional[float]:
     """

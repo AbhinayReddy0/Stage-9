@@ -4,10 +4,9 @@ Redis client. No real Redis at localhost:6379 is needed.
 """
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 import redis as redis_lib

@@ -10,7 +10,8 @@ Run:
 """
 from __future__ import annotations
 
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 import uuid
@@ -30,12 +31,12 @@ from learning.model_performance_aggregator import run_model_performance_aggregat
 from learning.learning_params_updater import LearningParamsUpdater
 
 from infrastructure.state_machine import AgentState, transition
-from handlers.preloading  import preloading_handler
-from handlers.perceiving  import perceiving_handler
-from handlers.planning    import planning_handler
-from handlers.acting      import acting_handler
-from handlers.learning    import learning_handler
-from handlers.reporting   import reporting_handler
+from handlers.preloading import preloading_handler
+from handlers.perceiving import perceiving_handler
+from handlers.planning import planning_handler
+from handlers.acting import acting_handler
+from handlers.learning import learning_handler
+from handlers.reporting import reporting_handler
 from infrastructure.seed import seed_tenant_params
 from tests.stage9_data_factory import (
     gen_cold_start, gen_stable, gen_trending, gen_intermittent,

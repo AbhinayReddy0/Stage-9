@@ -12,7 +12,6 @@ classification + numeric helpers are deterministic and worth pinning:
 """
 from __future__ import annotations
 
-import math
 import sys
 from pathlib import Path
 from unittest.mock import MagicMock

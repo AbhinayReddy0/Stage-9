@@ -30,9 +30,7 @@ from infrastructure.constants import (
     REORDER_SIGNAL_LOOKBACK,
     REORDER_STOCKOUT_MIN_EVENTS,
     Agent,
-    Model,
     Param,
-    Pattern,
     SignalType,
 )
 from infrastructure.db import pg_conn

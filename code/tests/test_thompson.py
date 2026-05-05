@@ -15,9 +15,9 @@ import numpy as np
 import pytest
 
 from models.thompson import ThompsonSampler
-from models.naive    import NaiveForecast
-from models.ses      import SESModel
-from models.holt     import HoltLinearTrend
+from models.naive import NaiveForecast
+from models.ses import SESModel
+from models.holt import HoltLinearTrend
 
 
 @pytest.fixture

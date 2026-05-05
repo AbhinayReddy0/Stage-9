@@ -12,9 +12,6 @@ import sys
 import warnings
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock
-
-import pytest
 
 _CODE = Path(__file__).resolve().parents[3]
 if str(_CODE) not in sys.path:

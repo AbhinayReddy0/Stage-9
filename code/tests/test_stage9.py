@@ -62,14 +62,12 @@ Layer 3: cleanup runs after each scenario class — rows are deleted.
 from __future__ import annotations
 
 import json
-import os
 import sys
 import uuid
 from datetime import date as _date, timedelta as _timedelta
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -86,7 +84,9 @@ except ImportError:
     )
 
 # Skip if no DB password (CI-friendly).
-from infrastructure.config import DB_DSN as _DSN, DB_PASSWORD as _DB_PASSWORD, PROJECT_ROOT as _PROJECT_ROOT_STR  # noqa: E402
+from infrastructure.config import (  # noqa: E402
+    DB_DSN as _DSN, DB_PASSWORD as _DB_PASSWORD, PROJECT_ROOT as _PROJECT_ROOT_STR,
+)
 if not _DB_PASSWORD:
     pytest.skip(
         "DB_PASSWORD not set in .env — configure .env to run DB tests.",

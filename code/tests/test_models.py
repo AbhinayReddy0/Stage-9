@@ -21,14 +21,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from models.base      import BaseModel, ModelFitError
+from models.base import BaseModel, ModelFitError
 from forecasting.tier_router import _get_model_class
 from infrastructure.constants import Model, PATTERN_MODEL_MAP
-from models.bootstrap import BOOTSTRAP_UNCERTAINTY
-from models.naive     import NaiveForecast
-from models.ses       import SESModel
-from models.croston   import CrostonMethod
-from models.holt      import HoltLinearTrend
+from models.naive import NaiveForecast
+from models.ses import SESModel
+from models.croston import CrostonMethod
+from models.holt import HoltLinearTrend
 from models.prophet_model import ProphetModel
 
 from tests.conftest import EXPECTED_HORIZON_KEYS, FEATURES
@@ -61,7 +60,7 @@ class TestBaseModelContract:
     def test_required_features_always_contains_date_and_qty(self, Cls):
         m = Cls(hp=Cls({}).default_hp)
         assert "date" in m.required_features
-        assert "qty"  in m.required_features
+        assert "qty" in m.required_features
 
     @pytest.mark.parametrize("Cls", ALL_MODELS, ids=ALL_MODEL_IDS)
     def test_default_hp_in_search_space(self, Cls):
@@ -166,7 +165,7 @@ class TestBaseModelContract:
     # ── sample_weights accepted silently by non-Prophet models ───────────────
 
     @pytest.mark.parametrize("Cls", [NaiveForecast, SESModel, CrostonMethod, HoltLinearTrend],
-                              ids=["Naive","SES","Croston","Holt"])
+                             ids=["Naive", "SES", "Croston", "Holt"])
     def test_sample_weights_silently_ignored(self, Cls, df_normal):
         """Non-Prophet models must accept sample_weights without crashing."""
         m = Cls(hp=Cls({}).default_hp)
@@ -612,7 +611,7 @@ class TestProphetModel:
 class TestAllZeroDemand:
 
     @pytest.mark.parametrize("Cls", [NaiveForecast, SESModel, HoltLinearTrend],
-                              ids=["NaiveForecast", "SESModel", "HoltLinearTrend"])
+                             ids=["NaiveForecast", "SESModel", "HoltLinearTrend"])
     def test_all_zero_demand_no_crash(self, Cls, df_all_zeros):
         m = Cls(hp=Cls({}).default_hp)
         m.fit(df_all_zeros, FEATURES)
@@ -620,7 +619,7 @@ class TestAllZeroDemand:
         assert len(result) == 30
 
     @pytest.mark.parametrize("Cls", [NaiveForecast, SESModel, HoltLinearTrend],
-                              ids=["NaiveForecast", "SESModel", "HoltLinearTrend"])
+                             ids=["NaiveForecast", "SESModel", "HoltLinearTrend"])
     def test_all_zero_demand_non_negative_finite(self, Cls, df_all_zeros):
         m = Cls(hp=Cls({}).default_hp)
         m.fit(df_all_zeros, FEATURES)
@@ -629,7 +628,7 @@ class TestAllZeroDemand:
         assert np.all(np.isfinite(result)), f"{Cls.__name__}: non-finite on all-zero series"
 
     @pytest.mark.parametrize("Cls", [NaiveForecast, SESModel, HoltLinearTrend],
-                              ids=["NaiveForecast", "SESModel", "HoltLinearTrend"])
+                             ids=["NaiveForecast", "SESModel", "HoltLinearTrend"])
     def test_all_zero_demand_all_horizons_non_negative(self, Cls, df_all_zeros):
         m = Cls(hp=Cls({}).default_hp)
         m.fit(df_all_zeros, FEATURES)
@@ -708,11 +707,11 @@ class TestLargeQtyValues:
 class TestModelRegistry:
 
     def test_known_names_return_correct_classes(self):
-        assert _get_model_class(Model.NAIVE)        is NaiveForecast
-        assert _get_model_class(Model.CROSTON)      is CrostonMethod
-        assert _get_model_class(Model.PROPHET)      is ProphetModel
+        assert _get_model_class(Model.NAIVE) is NaiveForecast
+        assert _get_model_class(Model.CROSTON) is CrostonMethod
+        assert _get_model_class(Model.PROPHET) is ProphetModel
         assert _get_model_class(Model.HOLTS_LINEAR) is HoltLinearTrend
-        assert _get_model_class(Model.SES)          is SESModel
+        assert _get_model_class(Model.SES) is SESModel
 
     def test_unknown_name_falls_back_to_ses(self):
         cls = _get_model_class("totally_unknown_model")
@@ -729,3 +728,4 @@ class TestModelRegistry:
             cls = _get_model_class(model_name)
             assert issubclass(cls, BaseModel), \
                 f"_get_model_class({model_name!r}) returned {cls}, not a BaseModel subclass"
+

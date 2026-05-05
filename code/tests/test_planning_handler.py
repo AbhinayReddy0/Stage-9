@@ -14,8 +14,6 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 
 import pandas as pd
-import pytest
-
 _CODE = Path(__file__).resolve().parents[3]
 for p in (str(_CODE), str(_CODE / "handlers")):
     if p not in sys.path:

@@ -19,9 +19,7 @@ import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import numpy as np
 import pandas as pd
-import pytest
 
 _CODE = Path(__file__).resolve().parents[3]
 for p in (str(_CODE), str(_CODE / "handlers")):
@@ -37,7 +35,7 @@ from handlers.acting import (
     _make_dual_pool_log_failure,
 )
 from infrastructure.constants import (
-    ForecastStatus, Model, Param, ProcessingTier,
+    ForecastStatus, Model, ProcessingTier,
 )
 
 

@@ -128,7 +128,7 @@ import pandas as pd
 from infrastructure.constants import (
     HORIZONS, FORECAST_COLUMN_MAP, PATTERN_MODEL_MAP, Model, Pattern,
     OOS_ADJUSTMENT_MAX_FACTOR, REORDER_BIAS_FACTOR_DEFAULT,
-    PATTERN_BASE_CONFIDENCE_PARAM, ULTRA_SPARSE_MAX_OBSERVATION_DAYS,
+    ULTRA_SPARSE_MAX_OBSERVATION_DAYS,
     B2B_WEEKEND_ZERO_RATIO_THRESHOLD, PATTERN_QUANTILE_PARAM,
     CRITICALITY_A_QUANTILE, CriticalityTier, LearningMode, Param, TenantMaturity,
     PROPHET_FAMILY,
@@ -1669,7 +1669,8 @@ def print_console_report(
         print()
         print("-- Overall Accuracy by Horizon " + "-" * 34)
         print(
-            f"  {'Horizon':>8}  {'MAPE mean':>10}  {'MAE (units)':>12}  {'RMSE (units)':>13}  {'Bias mean':>10}  {'N':>6}")
+            f"  {'Horizon':>8}  {'MAPE mean':>10}  {'MAE (units)':>12}"
+            f"  {'RMSE (units)':>13}  {'Bias mean':>10}  {'N':>6}")
         for _, row in overall.iterrows():
             print(f"  {int(row['horizon_days']):>8}d  "
                   f"{row['mape_mean']:>10.3f}  "

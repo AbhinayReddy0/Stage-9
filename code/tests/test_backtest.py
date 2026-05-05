@@ -15,7 +15,6 @@ import pytest
 
 from backtesting.backtesting import (
     BacktestContext,
-    BacktestMetrics,
     SkuBacktestInput,
     detect_exceptions,
     detect_structural_break,

@@ -12,7 +12,6 @@ consumed=TRUE is never set here per the SignalConsumer PEEK contract).
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from infrastructure.constants import SignalType
 from infrastructure.db_utils import DBConnection

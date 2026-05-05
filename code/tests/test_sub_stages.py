@@ -28,13 +28,12 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from models.naive        import NaiveForecast
-from models.ses          import SESModel
-from models.base         import ModelFitError
+from models.naive import NaiveForecast
+from models.ses import SESModel
+from models.base import ModelFitError
 from forecasting.feature_engg import run_feature_engineering
 from models.hp_tuning import run_hp_tuning, HPTuningResult
-from tests.conftest import FEATURES
-from infrastructure.constants    import Param
+from infrastructure.constants import Param
 
 
 # ---------------------------------------------------------------------------
@@ -88,7 +87,7 @@ class TestSubStage92ReliabilityFilter:
         result = run_feature_engineering(mock_ctx, df, model, preloaded, mock_params, mock_bw)
         # Required features always present
         assert "date" in result.selected_features
-        assert "qty"  in result.selected_features
+        assert "qty" in result.selected_features
 
     def test_required_features_never_dropped(self, df_normal, mock_ctx, mock_params, mock_bw):
         """Critical Rule: required_features always present in selected_features."""
@@ -312,7 +311,7 @@ class TestSubStage93BatchWriterRow:
         run_hp_tuning(mock_ctx, df_normal, model, {}, mock_params, mock_bw)
         row = mock_bw.row_for("hyperparameter_decisions")
         assert "used_category_comps" not in row
-        assert "lifecycle_stage"     not in row
+        assert "lifecycle_stage" not in row
 
     def test_config_hash_deterministic(self, df_normal, mock_ctx, mock_params, mock_bw):
         """Done Criterion 9: config_hash must match ThompsonSampler.config_hash."""
@@ -408,7 +407,7 @@ class TestSubStage92AllFeaturesFail:
         result = run_feature_engineering(mock_ctx, df, model, preloaded, mock_params, mock_bw)
         for req in model.required_features:
             assert req in result.selected_features, f"Required feature '{req}' missing"
-        assert "promo_flag"  not in result.selected_features
+        assert "promo_flag" not in result.selected_features
         assert "day_of_week" not in result.selected_features
 
     def test_all_features_fail_batchwriter_row_still_written(
@@ -469,7 +468,6 @@ class TestSubStage92B2BMinimalRows:
 # ===========================================================================
 
 from forecasting.feature_engg import _compute_dow_multipliers
-from infrastructure.constants import PROPHET_FAMILY
 
 
 class TestSubStage92DowMultipliers:

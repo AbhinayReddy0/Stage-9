@@ -96,9 +96,9 @@ class TestWatchNode:
         assert "ORDER BY updated_at ASC" in sql
         assert "LIMIT 50" in sql
         # The three statuses we route to stage_8 / 9 / 10
-        assert RunStatus.DATA_READY            in params
-        assert RunStatus.PATTERNS_DISCOVERED   in params
-        assert RunStatus.FORECASTED            in params
+        assert RunStatus.DATA_READY in params
+        assert RunStatus.PATTERNS_DISCOVERED in params
+        assert RunStatus.FORECASTED in params
 
     def test_cursor_is_closed_after_query(self):
         conn = _FakeConn(rows=[])

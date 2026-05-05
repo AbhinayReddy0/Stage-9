@@ -20,7 +20,8 @@ Run:
 """
 from __future__ import annotations
 
-import sys, os
+import sys
+import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -455,7 +456,7 @@ class TestModelPerformanceAggregatorRead:
             with conn.cursor() as cur:
                 cur.execute("SELECT COUNT(*) FROM stage9.forecast_outcomes WHERE tenant_id = %s",
                             (TENANT_ID,))
-                outcome_count = cur.fetchone()[0]
+                cur.fetchone()  # outcomes may be empty if outcome_collector hasn't run
             # outcomes won't exist since we haven't run outcome_collector (needs golden_table)
             # the aggregator must handle this without raising
             params = TenantParams.load(TENANT_ID, conn)
@@ -489,7 +490,7 @@ class TestLearningParamsUpdaterRead:
                     "SELECT COUNT(*) FROM stage9.adaptive_quantile_state WHERE tenant_id = %s",
                     (TENANT_ID,),
                 )
-                count = cur.fetchone()[0]
+                cur.fetchone()  # adaptive_quantile_state may be empty
             # adaptive_quantile_state is written by OutcomeCollector (needs golden_table)
             # so it may be empty — updater must handle that gracefully
             updater = LearningParamsUpdater()

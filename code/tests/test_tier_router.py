@@ -12,7 +12,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -83,7 +82,7 @@ class TestScaleHorizons:
 
     def _prior(self, value):
         return {f"forecast_{h}d": {"mean": value, "p50": value,
-                                    "p80": value * 1.2, "p90": value * 1.4}
+                                   "p80": value * 1.2, "p90": value * 1.4}
                 for h in (7, 14, 30, 60, 90, 150, 180, 365)}
 
     def test_returns_all_horizon_columns(self):
@@ -110,9 +109,9 @@ class TestScaleHorizons:
                  "forecast_30d": "weird",
                  "forecast_60d": {"mean": 100, "p50": 100, "p80": 120, "p90": 140},
                  "forecast_90d": {"mean": 100, "p50": 100, "p80": 120, "p90": 140},
-                 "forecast_150d":{"mean": 100, "p50": 100, "p80": 120, "p90": 140},
-                 "forecast_180d":{"mean": 100, "p50": 100, "p80": 120, "p90": 140},
-                 "forecast_365d":{"mean": 100, "p50": 100, "p80": 120, "p90": 140}}
+                 "forecast_150d": {"mean": 100, "p50": 100, "p80": 120, "p90": 140},
+                 "forecast_180d": {"mean": 100, "p50": 100, "p80": 120, "p90": 140},
+                 "forecast_365d": {"mean": 100, "p50": 100, "p80": 120, "p90": 140}}
         out = _scale_horizons(prior, 2.0)
         assert out["forecast_14d"] is None
         assert out["forecast_30d"] == "weird"
@@ -142,7 +141,7 @@ class TestGetBestHpFromThompson:
             }
         }})()
         out = _get_best_hp_from_thompson("sku-1", "ses", preloaded,
-                                          default_hp={"smoothing_level": 0.99})
+                                         default_hp={"smoothing_level": 0.99})
         assert out == {"smoothing_level": 0.5}
 
     def test_returns_default_when_winner_config_is_empty(self):

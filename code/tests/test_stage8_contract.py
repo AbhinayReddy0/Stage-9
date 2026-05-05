@@ -32,6 +32,7 @@ from infrastructure.config import DB_DSN as _DSN  # noqa: E402
 # Module-level fixture — load all schema info in one pass
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(scope="module")
 def schema_info():
     try:
@@ -88,12 +89,14 @@ def schema_info():
 def _col(schema_info, table, column):
     return schema_info["columns"].get(table, {}).get(column)
 
+
 def _assert_col(schema_info, table, column, expected_type):
     info = _col(schema_info, table, column)
     assert info is not None, f"stage8.{table}.{column} missing"
     assert info["data_type"] == expected_type, (
         f"stage8.{table}.{column}: expected {expected_type!r}, got {info['data_type']!r}"
     )
+
 
 def _assert_not_null(schema_info, table, column):
     info = _col(schema_info, table, column)
@@ -122,6 +125,7 @@ EXPECTED_TABLES = {
     "pattern_feedback",
     "canonical_sku",
 }
+
 
 class TestStage8TablesExist:
     def test_all_tables_present(self, schema_info):

@@ -30,14 +30,13 @@ Tests are intentionally isolated:
 from __future__ import annotations
 
 import math
-from typing import Any
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from models.ses         import SESModel, _ses_numpy, _HP_SEARCH_SPACE, _DEFAULT_HP
-from models.base        import BaseModel, ModelFitError
+from models.ses import SESModel, _ses_numpy, _HP_SEARCH_SPACE, _DEFAULT_HP
+from models.base import BaseModel
 from infrastructure.constants import HORIZONS, FORECAST_COLUMN_MAP
 
 

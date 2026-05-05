@@ -12,9 +12,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from models.base      import BaseModel, ModelFitError
+from models.base import ModelFitError
 from models.bootstrap import bootstrap_quantiles, BOOTSTRAP_UNCERTAINTY
-from infrastructure.errors    import Stage9Error
+from infrastructure.errors import Stage9Error
 
 
 # ===========================================================================

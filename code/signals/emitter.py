@@ -15,7 +15,7 @@ from typing import Any, Callable, Optional
 from infrastructure.db_utils import DBConnection
 from infrastructure.tenant_params import TenantParams
 from signals._base import (
-    Signal, SignalEmitFailed,
+    SignalEmitFailed,
     SIGNAL_TYPE_FORECAST_ACCURACY, SIGNAL_TYPE_FORECAST_RISK,
     SIGNAL_TYPE_CROSS_SKU_LEARNING, SIGNAL_TYPE_MODEL_HEALTH,
     TTL_FORECAST_ACCURACY_DAYS, TTL_FORECAST_RISK_DAYS,

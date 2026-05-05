@@ -21,8 +21,7 @@ from __future__ import annotations
 
 import time
 import uuid
-import logging
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -32,7 +31,6 @@ from infrastructure.constants import (
     ProcessingTier,
 )
 from learning.self_assessment import (
-    ModelHealthEntry,
     SelfAssessmentEngine,
     SKUResult,
 )

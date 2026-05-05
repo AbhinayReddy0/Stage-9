@@ -879,8 +879,6 @@ class TestReasonTruncation(unittest.TestCase):
         """
         long_message = "x" * 5000
 
-        import infrastructure.state_machine as sm
-
         captured_reasons = []
 
         def capturing_transition(d, tid, rid, current, nxt, reason=None):

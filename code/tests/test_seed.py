@@ -7,7 +7,6 @@ Integration tests hit stage9_dev in local Docker; auto-skip if unreachable.
 
 from __future__ import annotations
 
-import os
 import uuid
 from decimal import Decimal
 

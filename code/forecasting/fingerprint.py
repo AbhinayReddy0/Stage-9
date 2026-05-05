@@ -38,8 +38,6 @@ _SHA256_KWARGS: dict[str, bool] = (
 )
 
 
-
-
 class _CacheEntry(TypedDict):
     fingerprint: str
 

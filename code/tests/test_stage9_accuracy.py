@@ -60,12 +60,10 @@ HOW TO RUN
 from __future__ import annotations
 
 import json
-import os
 import sys
 import uuid
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -80,7 +78,10 @@ try:
 except ImportError:
     pytest.skip("psycopg2 not installed", allow_module_level=True)
 
-from infrastructure.config import DB_DSN as _DSN, DB_PASSWORD as _DB_PASSWORD, PROJECT_ROOT as _PROJECT_ROOT_STR  # noqa: E402
+from infrastructure.config import (  # noqa: E402
+    DB_DSN as _DSN, DB_PASSWORD as _DB_PASSWORD, PROJECT_ROOT as _PROJECT_ROOT_STR,
+)
+
 if not _DB_PASSWORD:
     pytest.skip(
         "DB_PASSWORD not set in .env — configure .env to run DB tests.",
@@ -93,21 +94,20 @@ if not _DB_PASSWORD:
 _PROJECT_ROOT = Path(_PROJECT_ROOT_STR).resolve()
 sys.path.insert(0, str(_PROJECT_ROOT))
 
-from infrastructure.seed import seed_tenant_params                        # noqa: E402
-from infrastructure.state_machine import AgentState, transition           # noqa: E402
-from handlers.preloading import preloading_handler         # noqa: E402
-from handlers.perceiving import perceiving_handler         # noqa: E402
-from handlers.planning import planning_handler             # noqa: E402
-from handlers.acting import acting_handler                 # noqa: E402
-from handlers.learning import learning_handler             # noqa: E402
-from handlers.reporting import reporting_handler           # noqa: E402
+from infrastructure.seed import seed_tenant_params  # noqa: E402
+from infrastructure.state_machine import AgentState, transition  # noqa: E402
+from handlers.preloading import preloading_handler  # noqa: E402
+from handlers.perceiving import perceiving_handler  # noqa: E402
+from handlers.planning import planning_handler  # noqa: E402
+from handlers.acting import acting_handler  # noqa: E402
+from handlers.learning import learning_handler  # noqa: E402
+from handlers.reporting import reporting_handler  # noqa: E402
 
 # Model imports for math tests — bypass DB entirely
-from models.ses import SESModel                           # noqa: E402
-from models.holt import HoltLinearTrend                   # noqa: E402
+from models.ses import SESModel  # noqa: E402
+from models.holt import HoltLinearTrend  # noqa: E402
 from models.croston import CrostonMethod as CrostonModel  # noqa: E402
-from infrastructure.constants import HORIZONS                     # noqa: E402
-
+from infrastructure.constants import HORIZONS  # noqa: E402
 
 # ===========================================================================
 # Constants
@@ -115,9 +115,9 @@ from infrastructure.constants import HORIZONS                     # noqa: E402
 
 # Tolerance tiers by tenant maturity
 TOLERANCE = {
-    "new":         0.15,   # 15% — first run, Thompson at uniform prior
-    "developing":  0.10,   # 10% — ~10 weeks of data, Thompson updating
-    "established": 0.06,   # 6%  — ~12 weeks, Thompson converging
+    "new": 0.15,  # 15% — first run, Thompson at uniform prior
+    "developing": 0.10,  # 10% — ~10 weeks of data, Thompson updating
+    "established": 0.06,  # 6%  — ~12 weeks, Thompson converging
 }
 
 _NS_ACC = uuid.UUID("00000000-0000-0000-0000-ACCACCACCACC")
@@ -197,7 +197,7 @@ def _seed_signal_context(cur, tenant_id, run_id, n_skus, maturity):
 
 
 def _seed_feature_decisions(cur, tenant_id, run_id, sku_uuid,
-                             weekend_zero_ratio=0.0):
+                           weekend_zero_ratio=0.0):
     rel = {"trend": 0.85, "seasonality": 0.85, "zero_ratio": 0.95, "cv": 0.90}
     cur.execute(
         """
@@ -287,8 +287,10 @@ def _get_forecast(conn, tenant_id, run_id, sku_uuid):
     cur.close()
     if row is None:
         return None
+
     def _parse(v):
         return v if isinstance(v, dict) else json.loads(v)
+
     return {
         "horizons": {h: _parse(row[i]) for i, h in enumerate(HORIZONS)},
         "confidence_final": float(row[8]) if row[8] else None,
@@ -409,12 +411,12 @@ class TestMath:
         model.fit(df, ["date", "qty"])
         result = model.predict_all_horizons(df, ["date", "qty"])
         m30 = result["forecast_30d"]["mean"]
-        m7  = result["forecast_7d"]["mean"]
+        m7 = result["forecast_7d"]["mean"]
         assert m7 > 0, "forecast_7d mean must be positive"
         ratio = m30 / m7
-        assert abs(ratio - 30/7) < 0.05, (
+        assert abs(ratio - 30 / 7) < 0.05, (
             f"SES horizons not linear: forecast_30d/forecast_7d={ratio:.3f}, "
-            f"expected {30/7:.3f}"
+            f"expected {30 / 7:.3f}"
         )
 
     def test_ses_alpha_effect(self):
@@ -426,7 +428,7 @@ class TestMath:
         series = [10.0] * 30 + [30.0] * 30
         df = pd.DataFrame({"date": pd.date_range("2024-01-01", periods=60),
                            "qty": series})
-        low_alpha  = SESModel(hp={"smoothing_level": 0.1})
+        low_alpha = SESModel(hp={"smoothing_level": 0.1})
         high_alpha = SESModel(hp={"smoothing_level": 0.5})
         low_alpha.fit(df, ["date", "qty"])
         high_alpha.fit(df, ["date", "qty"])
@@ -517,15 +519,17 @@ class TestMath:
         forecast_365d(damped) < forecast_365d(undamped).
         """
         base = 10.0 + np.arange(90) * 0.2
-        df = pd.DataFrame({"date": pd.date_range("2024-01-01", periods=90),
-                           "qty": base.round().astype(float)})
-        damped   = HoltLinearTrend(hp={"smoothing_level": 0.3, "smoothing_trend": 0.1,
-                                        "damped_trend": True})
+        df = pd.DataFrame({
+            "date": pd.date_range("2024-01-01", periods=90),
+            "qty": base.round().astype(float),
+        })
+        damped = HoltLinearTrend(hp={"smoothing_level": 0.3, "smoothing_trend": 0.1,
+                                     "damped_trend": True})
         undamped = HoltLinearTrend(hp={"smoothing_level": 0.3, "smoothing_trend": 0.1,
-                                        "damped_trend": False})
+                                       "damped_trend": False})
         damped.fit(df, ["date", "qty"])
         undamped.fit(df, ["date", "qty"])
-        r_damp   = damped.predict_all_horizons(df, ["date", "qty"])
+        r_damp = damped.predict_all_horizons(df, ["date", "qty"])
         r_undamp = undamped.predict_all_horizons(df, ["date", "qty"])
         f365_d = r_damp["forecast_365d"]["mean"]
         f365_u = r_undamp["forecast_365d"]["mean"]
@@ -538,7 +542,7 @@ class TestMath:
         """
         A clearly rising series must produce a positive trend component.
         """
-        base = 5.0 + np.arange(60) * 0.5   # rising from 5 to 35
+        base = 5.0 + np.arange(60) * 0.5  # rising from 5 to 35
         df = pd.DataFrame({"date": pd.date_range("2024-01-01", periods=60),
                            "qty": base.astype(float)})
         model = HoltLinearTrend(
@@ -639,14 +643,14 @@ class TestAccuracy:
         """One tenant, one run, 3 accuracy SKUs."""
         conn = _connect()
         tenant_id = str(uuid.uuid4())
-        run_id    = str(uuid.uuid4())
+        run_id = str(uuid.uuid4())
         print(f"\n[accuracy] tenant={tenant_id}")
 
         # SKU definitions: (code, pattern, model, daily_mean, n_days)
         skus = [
-            ("ACC-STB-001", "stable",       "SES",     20.0, 120),
-            ("ACC-TRN-001", "trending",     "Holt",    10.0, 120),
-            ("ACC-INT-001", "intermittent", "Croston",  5.0, 180),
+            ("ACC-STB-001", "stable", "SES", 20.0, 120),
+            ("ACC-TRN-001", "trending", "Holt", 10.0, 120),
+            ("ACC-INT-001", "intermittent", "Croston", 5.0, 180),
         ]
 
         try:
@@ -761,7 +765,7 @@ class TestAccuracy:
         row = _get_forecast(conn, accuracy_run["tenant_id"],
                             accuracy_run["run_id"], _sku_uuid("ACC-TRN-001"))
         assert row is not None
-        m30  = float(row["horizons"][30]["mean"])
+        m30 = float(row["horizons"][30]["mean"])
         m365 = float(row["horizons"][365]["mean"])
         assert m365 < m30 * 14, (
             f"Holt damped: forecast_365d={m365:.1f} should be < "
@@ -820,7 +824,7 @@ class TestLearningLoop:
     def loop_runs(self):
         conn = _connect()
         tenant_id = str(uuid.uuid4())
-        sku_uuid  = _sku_uuid("LOOP-STB-001")
+        sku_uuid = _sku_uuid("LOOP-STB-001")
         print(f"\n[loop] tenant={tenant_id}")
 
         # Stable demand: 20 units/day flat — easy to predict
@@ -881,20 +885,20 @@ class TestLearningLoop:
                 cur.close()
 
                 run_results.append({
-                    "run":           i,
-                    "run_id":        run_id,
-                    "maturity":      maturity,
-                    "forecast":      forecast,
-                    "thompson":      thompson_row,
+                    "run": i,
+                    "run_id": run_id,
+                    "maturity": maturity,
+                    "forecast": forecast,
+                    "thompson": thompson_row,
                     "learning_mode": init_row[0] if init_row else None,
-                    "model":         init_row[1] if init_row else None,
+                    "model": init_row[1] if init_row else None,
                 })
 
             yield {
                 "tenant_id": tenant_id,
-                "sku_uuid":  sku_uuid,
-                "conn":      conn,
-                "runs":      run_results,
+                "sku_uuid": sku_uuid,
+                "conn": conn,
+                "runs": run_results,
             }
         finally:
             try:
@@ -1030,10 +1034,10 @@ class TestFullPipeline:
 
     # All 5 patterns so Stage 10 can handle any mix
     _SKUS = [
-        ("PIPE-CS-001",  "cold_start",   "Naive",   25,  0.05),
-        ("PIPE-STB-001", "stable",       "SES",     120, 0.0),
-        ("PIPE-TRN-001", "trending",     "Holt",    120, 0.0),
-        ("PIPE-SEA-001", "seasonal",     "Prophet", 365, 0.0),
+        ("PIPE-CS-001", "cold_start", "Naive", 25, 0.05),
+        ("PIPE-STB-001", "stable", "SES", 120, 0.0),
+        ("PIPE-TRN-001", "trending", "Holt", 120, 0.0),
+        ("PIPE-SEA-001", "seasonal", "Prophet", 365, 0.0),
         ("PIPE-INT-001", "intermittent", "Croston", 180, 0.65),
     ]
 
@@ -1041,7 +1045,7 @@ class TestFullPipeline:
     def pipeline_run(self):
         conn = _connect()
         tenant_id = str(uuid.uuid4())
-        run_id    = str(uuid.uuid4())
+        run_id = str(uuid.uuid4())
         print(f"\n[pipeline] tenant={tenant_id}")
 
         try:
@@ -1092,7 +1096,7 @@ class TestFullPipeline:
     def stage10_rows(self, pipeline_run):
         """Execute the exact query Stage 10 would run."""
         conn = pipeline_run["conn"]
-        cur  = conn.cursor()
+        cur = conn.cursor()
         cur.execute(
             """
             SELECT
@@ -1130,7 +1134,7 @@ class TestFullPipeline:
 
     def test_stage10_all_horizon_means_non_null(self, stage10_rows):
         """Every horizon mean must be non-null and ≥ 0."""
-        col_names = ["f7","f14","f30","f60","f90","f150","f180","f365"]
+        col_names = ["f7", "f14", "f30", "f60", "f90", "f150", "f180", "f365"]
         for row in stage10_rows:
             sku_id = str(row[0])
             for i, col in enumerate(col_names, start=1):
@@ -1148,7 +1152,7 @@ class TestFullPipeline:
         """confidence_final must be non-null and in [0, 1]."""
         for row in stage10_rows:
             sku_id = str(row[0])
-            conf   = row[9]
+            conf = row[9]
             assert conf is not None, (
                 f"sku_id={sku_id}: confidence_final is NULL. "
                 f"Stage 10 uses this to weight PO recommendations."
@@ -1179,7 +1183,7 @@ class TestFullPipeline:
             sku_id = str(row[0])
             if sku_id == cold_start_uuid:
                 continue
-            f30 = float(row[3])   # forecast_30d mean
+            f30 = float(row[3])  # forecast_30d mean
             assert f30 > 0, (
                 f"sku_id={sku_id}: forecast_30d.mean={f30} is 0 for a "
                 f"non-cold-start SKU. Stage 10 would recommend no reorder."
@@ -1192,7 +1196,7 @@ class TestFullPipeline:
         If this is wrong, Stage 10 never starts.
         """
         conn = pipeline_run["conn"]
-        cur  = conn.cursor()
+        cur = conn.cursor()
         cur.execute(
             "SELECT status FROM stage8.runs WHERE run_id=%s",
             (pipeline_run["run_id"],),
@@ -1211,7 +1215,7 @@ class TestFullPipeline:
         This is Stage 8's learning signal for the next run.
         """
         conn = pipeline_run["conn"]
-        cur  = conn.cursor()
+        cur = conn.cursor()
         cur.execute(
             "SELECT COUNT(*) FROM stage8.pattern_feedback "
             "WHERE tenant_id=%s AND run_id=%s",

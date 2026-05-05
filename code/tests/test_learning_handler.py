@@ -14,8 +14,6 @@ import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import pytest
-
 _CODE = Path(__file__).resolve().parents[3]
 for p in (str(_CODE), str(_CODE / "handlers")):
     if p not in sys.path:
@@ -82,19 +80,17 @@ def _sku_result(sku_id, mape, model="ses", used_fallback=False, pattern="stable"
 class TestLearningHandler:
 
     def test_batch_writer_flushed_first(self):
-        ctx = _make_ctx("run-l-1")
+        _ctx = _make_ctx("run-l-1")
         try:
             learning_handler(tenant_id="t1", run_id="run-l-1", db=_FakeConn())
-            ctx.batch_writer.flush.assert_called_once()
+            _ctx.batch_writer.flush.assert_called_once()
         finally:
             remove("run-l-1")
 
     def test_thompson_state_upserted_for_each_config(self):
-        ctx = _make_ctx("run-l-2", thompson_state={
-            ("sku-1", "ses"):    {"hash-A": {"alpha": 2.0, "beta": 1.0,
-                                              "config": {"smoothing_level": 0.3}}},
-            ("sku-2", "holt"):   {"hash-B": {"alpha": 1.0, "beta": 2.0,
-                                              "config": {"smoothing_level": 0.4}}},
+        _make_ctx("run-l-2", thompson_state={
+            ("sku-1", "ses"):  {"hash-A": {"alpha": 2.0, "beta": 1.0, "config": {"smoothing_level": 0.3}}},
+            ("sku-2", "holt"): {"hash-B": {"alpha": 1.0, "beta": 2.0, "config": {"smoothing_level": 0.4}}},
         })
         try:
             conn = _FakeConn()
@@ -108,7 +104,7 @@ class TestLearningHandler:
             remove("run-l-2")
 
     def test_no_thompson_writes_when_state_empty(self):
-        ctx = _make_ctx("run-l-3", thompson_state={})
+        _make_ctx("run-l-3", thompson_state={})
         try:
             conn = _FakeConn()
             learning_handler(tenant_id="t1", run_id="run-l-3", db=conn)
@@ -121,14 +117,14 @@ class TestLearningHandler:
     def test_similarity_registry_written_for_converged_skus(self):
         """SKUs with backtest_mape <= warm_start_max_mape should land in
         sku_similarity_registry. Above-threshold SKUs are filtered out."""
-        ctx = _make_ctx("run-l-4",
-                        warm_start_max_mape=0.25,
-                        sku_results=[
-                            _sku_result("sku-good", 0.10),  # below threshold
-                            _sku_result("sku-bad",  0.50),  # above threshold
-                            _sku_result("sku-edge", 0.25),  # exactly at threshold (<=)
-                        ],
-                        thompson_state={})
+        _make_ctx("run-l-4",
+                  warm_start_max_mape=0.25,
+                  sku_results=[
+                      _sku_result("sku-good", 0.10),  # below threshold
+                      _sku_result("sku-bad",  0.50),  # above threshold
+                      _sku_result("sku-edge", 0.25),  # exactly at threshold (<=)
+                  ],
+                  thompson_state={})
         try:
             conn = _FakeConn()
             with patch("handlers.learning._emit_cross_sku_signal"):
@@ -145,7 +141,7 @@ class TestLearningHandler:
 
     def test_forecast_accuracy_signal_per_model(self):
         """One forecast_accuracy signal carrying per-model average MAPE."""
-        ctx = _make_ctx("run-l-5", sku_results=[
+        _make_ctx("run-l-5", sku_results=[
             _sku_result("a", 0.10, model="ses"),
             _sku_result("b", 0.20, model="ses"),
             _sku_result("c", 0.05, model="holt"),
@@ -164,7 +160,7 @@ class TestLearningHandler:
     def test_no_accuracy_signal_when_all_fallback(self):
         """If every SKU was a fallback, there's no real MAPE to report —
         the signal must NOT fire."""
-        ctx = _make_ctx("run-l-6", sku_results=[
+        _make_ctx("run-l-6", sku_results=[
             _sku_result("a", 0.30, used_fallback=True),
             _sku_result("b", 0.40, used_fallback=True),
         ])
@@ -182,7 +178,7 @@ class TestLearningHandler:
             remove("run-l-6")
 
     def test_fingerprint_cache_upserted_per_sku(self):
-        ctx = _make_ctx("run-l-7", new_fingerprints={
+        _make_ctx("run-l-7", new_fingerprints={
             "sku-a": {"fingerprint": "abc"},
             "sku-b": {"fingerprint": "def"},
         }, sku_tiers={"sku-a": "full", "sku-b": "full"})
@@ -200,7 +196,7 @@ class TestLearningHandler:
     def test_total_trials_increments_on_thompson_write(self):
         """The new code passes (state.get('total_trials', 0) + 1) so the
         first write lands as 1, second as 2, etc."""
-        ctx = _make_ctx("run-l-8", thompson_state={
+        _make_ctx("run-l-8", thompson_state={
             ("sku-1", "ses"): {
                 "hash": {"alpha": 1.5, "beta": 1.5,
                          "config": {}, "total_trials": 0},
@@ -214,3 +210,4 @@ class TestLearningHandler:
             assert row[7] == 1
         finally:
             remove("run-l-8")
+

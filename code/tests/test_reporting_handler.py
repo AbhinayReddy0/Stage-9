@@ -93,7 +93,7 @@ def fake_self_assessment():
 class TestReportingHandler:
 
     def test_status_forecasted_when_all_skus_clean(self, fake_self_assessment):
-        ctx = _make_ctx("run-rep-1", [_sku_result("a", ForecastStatus.FORECASTED)])
+        _make_ctx("run-rep-1", [_sku_result("a", ForecastStatus.FORECASTED)])
         conn = _FakeConn()
         with patch("handlers.reporting.SelfAssessmentEngine") as Eng:
             Eng.return_value.run.return_value = fake_self_assessment
@@ -107,7 +107,7 @@ class TestReportingHandler:
         assert runs_updates[0][1][0] == RunStatus.FORECASTED
 
     def test_status_needs_ack_when_any_sku_flagged(self, fake_self_assessment):
-        ctx = _make_ctx("run-rep-2", [
+        _make_ctx("run-rep-2", [
             _sku_result("a", ForecastStatus.FORECASTED),
             _sku_result("b", ForecastStatus.NEEDS_ACKNOWLEDGMENT),
         ])
@@ -122,7 +122,7 @@ class TestReportingHandler:
         assert runs_updates[0][1][0] == RunStatus.NEEDS_ACKNOWLEDGMENT
 
     def test_status_needs_ack_for_watchlist_review(self, fake_self_assessment):
-        ctx = _make_ctx("run-rep-3", [
+        _make_ctx("run-rep-3", [
             _sku_result("a", ForecastStatus.WATCHLIST_REVIEW),
         ])
         conn = _FakeConn()
@@ -136,7 +136,7 @@ class TestReportingHandler:
         assert runs_updates[0][1][0] == RunStatus.NEEDS_ACKNOWLEDGMENT
 
     def test_emits_model_health_signal_to_stage_8_and_stage_10(self, fake_self_assessment):
-        ctx = _make_ctx("run-rep-4", [_sku_result("a", ForecastStatus.FORECASTED)])
+        _make_ctx("run-rep-4", [_sku_result("a", ForecastStatus.FORECASTED)])
         conn = _FakeConn()
         with patch("handlers.reporting.SelfAssessmentEngine") as Eng:
             Eng.return_value.run.return_value = fake_self_assessment
@@ -153,7 +153,7 @@ class TestReportingHandler:
             assert p[4] == SignalType.MODEL_HEALTH
 
     def test_runcontext_removed_after_run(self, fake_self_assessment):
-        ctx = _make_ctx("run-rep-5", [_sku_result("a", ForecastStatus.FORECASTED)])
+        _make_ctx("run-rep-5", [_sku_result("a", ForecastStatus.FORECASTED)])
         conn = _FakeConn()
         with patch("handlers.reporting.SelfAssessmentEngine") as Eng:
             Eng.return_value.run.return_value = fake_self_assessment
@@ -163,7 +163,7 @@ class TestReportingHandler:
             fetch("run-rep-5")
 
     def test_self_assessment_engine_called_with_ctx_data(self, fake_self_assessment):
-        ctx = _make_ctx("run-rep-6", [_sku_result("a", ForecastStatus.FORECASTED)])
+        _make_ctx("run-rep-6", [_sku_result("a", ForecastStatus.FORECASTED)])
         conn = _FakeConn()
         with patch("handlers.reporting.SelfAssessmentEngine") as Eng:
             Eng.return_value.run.return_value = fake_self_assessment
@@ -190,3 +190,4 @@ class TestSetRunStatus:
         conn = _FakeConn()
         _set_run_status(conn, "t1", "r1", RunStatus.FORECASTED)
         assert conn.commits == 1
+

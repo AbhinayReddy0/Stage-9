@@ -18,8 +18,6 @@ from concurrent.futures import TimeoutError as FuturesTimeoutError
 import pytest
 
 from pipeline.dual_pool import (
-    APPLICATION_NAME,
-    DualPoolResult,
     SkuPipelineInput,
     cleanup_orphan_connections,
     is_prophet_family_sku,
@@ -322,10 +320,6 @@ def test_timeout_falls_back_to_naive_forecast():
     def log_failure(tenant_id, run_id, sku_id, reason):
         failed_log.append((sku_id, reason))
 
-    skus = [
-        _sku("ok", "Prophet"),       # will run _ok_pipeline (good path)
-        _sku("slow", "Prophet"),     # picks _slow_pipeline below
-    ]
     # Use two different paths via a small dispatcher
     stats = _run(
         [_sku("slow", "Prophet")],
@@ -497,8 +491,6 @@ def test_chunked_submission_bounds_inflight_futures(monkeypatch):
     """
     import pipeline.dual_pool as dp
     sizes: list[int] = []
-    real = dp.as_completed
-
     def _spy(futures, timeout=None):
         # futures may be dict (Py 3.x) or set/list. Record its length.
         sizes.append(len(futures))

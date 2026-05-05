@@ -12,8 +12,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-import pytest
-
 _CODE = Path(__file__).resolve().parents[3]
 for p in (str(_CODE), str(_CODE / "handlers")):
     if p not in sys.path:

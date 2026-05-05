@@ -15,7 +15,6 @@ import pytest
 from infrastructure.batch_writer import BatchWriter
 from infrastructure.constants import HORIZONS
 from forecasting.forecasting import (
-    DEFAULT_SIGNAL_RISK_LEVELS,
     EXCEPTION_PENALTY_FLAGS,
     ForecastBundle,
     ForecastContext,
@@ -27,7 +26,6 @@ from forecasting.forecasting import (
     determine_tier,
     emit_forecast_risk_signal,
     generate_horizons,
-    no_clearance_adjust,
     prefetch_calibration_gaps,
     reasonableness_check,
     run_substage_95,
@@ -222,7 +220,6 @@ def test_bootstrap_enforces_p50_le_p80_le_p90():
     for h in HORIZONS:
         q = out[h]
         assert q["p50"] <= q["p80"] <= q["p90"]
-
 
 
 # ---------------------------------------------------------------------------

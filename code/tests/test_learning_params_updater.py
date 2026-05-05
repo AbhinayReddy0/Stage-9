@@ -22,13 +22,12 @@ from __future__ import annotations
 import random
 import uuid
 from decimal import Decimal
-from typing import Any
 from unittest.mock import patch
 
 import pytest
 
-from infrastructure.constants import Model, Param, Pattern
-from learning.learning_params_updater import LearningParamsUpdater, compute_quantile_evidence
+from infrastructure.constants import Model, Param
+from learning.learning_params_updater import LearningParamsUpdater
 from infrastructure.tenant_params import TenantParams
 
 
@@ -133,8 +132,6 @@ def _tlp_rows(params=None) -> list[tuple]:
 def _mape_rows(model: str, avg_mape: float, count: int) -> list[tuple]:
     """One forecast_outcomes aggregate row."""
     return [(model, avg_mape, count)]
-
-
 
 
 # ===========================================================================
@@ -301,7 +298,7 @@ def test_d6_one_tenant_failure_does_not_abort_others():
     with patch.object(TenantParams, "update", _failing_update):
         for conn in [bad_conn, good_conn]:
             try:
-                summary = updater.run(tenant_id=str(uuid.uuid4()), conn=conn)
+                updater.run(tenant_id=str(uuid.uuid4()), conn=conn)
                 results["ok"] += 1
             except Exception:
                 results["failed"] += 1
