@@ -1,0 +1,38 @@
+# ============================================================
+# Atheera Stage 9 — Python Dependencies
+# Install each package individually as shown below:
+# ============================================================
+
+# pip install numpy
+numpy
+
+# pip install pandas
+pandas
+
+# pip install scipy
+scipy
+
+# pip install statsmodels
+statsmodels
+
+# pip install prophet
+prophet
+
+# pip install neuralprophet
+neuralprophet
+
+# pip install ruptures
+ruptures
+
+# pip install psycopg2-binary
+psycopg2-binary
+
+# pip install redis
+redis
+
+#pip install langgraph
+
+# pip install numpy pandas scipy statsmodels prophet ruptures psycopg2-binary redis langgraph pytest
+single-line-install-modules
+
+
