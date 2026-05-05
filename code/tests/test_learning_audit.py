@@ -43,6 +43,10 @@ from tests.stage9_data_factory import (
 
 from infrastructure.config import DB_DSN as _DSN  # noqa: E402
 
+# Skip if local stage8 is view-aliased (see _stage8_real_schema_required.py).
+from tests._stage8_real_schema_required import skip_if_stage8_uses_views  # noqa: E402
+skip_if_stage8_uses_views()
+
 TENANT_ID = str(uuid.uuid5(uuid.NAMESPACE_DNS, "learning-audit-tenant-001"))
 
 # No seasonal SKU — Prophet Stan chains add ~8 s per run.

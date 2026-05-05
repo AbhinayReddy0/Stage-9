@@ -23,7 +23,10 @@ def skip_if_stage8_uses_views() -> None:
     decorator at the top of an audit module."""
     dsn = os.environ.get("STAGE9_TEST_DSN")
     if not dsn:
-        pytest.skip("STAGE9_TEST_DSN not set", allow_module_level=True)
+        try:
+            from infrastructure.config import DB_DSN as dsn  # type: ignore
+        except Exception:
+            pytest.skip("STAGE9_TEST_DSN not set", allow_module_level=True)
 
     try:
         import psycopg2

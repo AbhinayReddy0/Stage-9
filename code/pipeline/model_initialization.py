@@ -16,7 +16,7 @@ Decisions (in order):
 Critical rules:
     - Never raises — all exceptions propagate to caller's process_sku_safely()
     - BatchWriter write is audit-only — wrapped in try/except, never blocks pipeline
-    - Decisionn 7 uses PEEK only — processed=TRUE is never set here
+    - Decision 7 uses PEEK only — processed=TRUE is never set here
 
 """
 

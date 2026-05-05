@@ -2,3 +2,16 @@
 .idea/
 **/__pycache__/
 **/*.pyc
+__pycache__/
+*.pyc
+*.pyo
+*.log
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+myvnv/
+node_modules/
+.claude
+.idea
